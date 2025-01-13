@@ -8,7 +8,7 @@ use Throwable;
 class Handler extends ExceptionHandler
 {
     /**
-     * A list of exception types with their corresponding custom log levels.
+     * 特定の例外タイプに対応するカスタムログレベルのリスト
      *
      * @var array<class-string<\Throwable>, \Psr\Log\LogLevel::*>
      */
@@ -17,7 +17,7 @@ class Handler extends ExceptionHandler
     ];
 
     /**
-     * A list of the exception types that are not reported.
+     * レポートしない例外タイプのリスト
      *
      * @var array<int, class-string<\Throwable>>
      */
@@ -26,7 +26,7 @@ class Handler extends ExceptionHandler
     ];
 
     /**
-     * A list of the inputs that are never flashed to the session on validation exceptions.
+     * バリデーション例外時にセッションにフラッシュしない入力のリスト
      *
      * @var array<int, string>
      */
@@ -37,14 +37,34 @@ class Handler extends ExceptionHandler
     ];
 
     /**
-     * Register the exception handling callbacks for the application.
+     * アプリケーション用の例外ハンドリングコールバックを登録
      *
      * @return void
      */
     public function register()
     {
         $this->reportable(function (Throwable $e) {
-            //
+            // ここにカスタム例外レポート処理を記述
         });
+    }
+
+    /**
+     * アプリケーションの例外レンダリングをカスタマイズ
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Throwable  $exception
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
+    public function render($request, Throwable $exception)
+    {
+        // APIリクエストの場合はJSON形式のエラーレスポンスを返す
+        if ($request->expectsJson()) {
+            return response()->json([
+                'error' => $exception->getMessage(), // エラーメッセージをJSON形式で返す
+            ], $this->isHttpException($exception) ? $exception->getStatusCode() : 500); // ステータスコードを設定
+        }
+
+        // 通常のHTMLレスポンスを返す
+        return parent::render($request, $exception);
     }
 }
