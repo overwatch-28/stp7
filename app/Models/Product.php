@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Exception;
 
 class Product extends Model
 {
@@ -78,5 +80,35 @@ class Product extends Model
 
         // ページネーション付きで結果を返す
         return $query->paginate($perPage);
+    }
+
+    /**
+     * 商品購入処理（在庫チェック＆販売登録）
+     */
+    public static function processPurchase($productId, $quantity)
+    {
+        return DB::transaction(function () use ($productId, $quantity) {
+            // 商品を取得
+            $product = self::findOrFail($productId);
+
+            // 在庫チェック
+            if ($product->stock < $quantity) {
+                throw new Exception('在庫が不足しています。', 400);
+            }
+
+            // 販売記録を作成
+            $sale = Sales::create([
+                'product_id' => $product->id,
+                'quantity' => $quantity,
+            ]);
+
+            // 在庫を減算
+            $product->decrement('stock', $quantity);
+
+            return [
+                'message' => '購入が完了しました。',
+                'sale' => $sale
+            ];
+        });
     }
 }

@@ -65,7 +65,7 @@
 
         <div class="col-md-3 align-self-end">
             <button type="submit" class="btn btn-primary" id="search-button">検索</button>
-            <a href="{{ route('products.index') }}" class="btn btn-secondary">リセット</a>
+            <button type="button" class="btn btn-secondary" id="reset-button">リセット</button>
         </div>
     </form>
 
@@ -116,6 +116,26 @@
                         alert('検索中にエラーが発生しました。もう一度お試しください。');
                         console.log('検索失敗:', xhr.responseText);
                     }
+                });
+            });
+
+            // リセットボタンのクリックイベント（フォームのクリア）
+            $('#reset-button').on('click', function (e) {
+                e.preventDefault();
+                $('#search-form')[0].reset();  // フォームをクリア
+                window.location.href = "{{ route('products.index') }}"; // ページをリロード
+            });
+
+            // ページネーションのクリック時に非同期で更新
+            $(document).on('click', '.pagination a', function (e) {
+                e.preventDefault();
+
+                const url = $(this).attr('href');
+                $.get(url, function (response) {
+                    $('#product-table').html(response.html); // 商品リストを更新
+                }).fail(function (xhr) {
+                    alert('ページ更新中にエラーが発生しました。');
+                    console.log('ページネーションエラー:', xhr.responseText);
                 });
             });
         });
